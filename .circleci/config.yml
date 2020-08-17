@@ -26,6 +26,8 @@ jobs:
             - "ae:7e:ec:6f:8a:58:eb:8b:42:49:53:1b:45:1e:34:00"
       # - checkout
       - run:
+          command: ls -al >> api.log && cat api.log
+      - run:
           command: git clone https://github.com/mudithalasantha/experiment-video-chat.git
 
       - run: sudo apt update # PHP CircleCI 2.0 Configuration File# PHP CircleCI 2.0 Configuration File sudo apt install zlib1g-dev libsqlite3-dev
