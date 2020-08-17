@@ -24,7 +24,9 @@ jobs:
       - add_ssh_keys:
           fingerprints:
             - "34:22:25:fb:07:d6:d6:83:9c:4e:54:1f:c4:81:b2:c3"
-      - checkout
+      # - checkout
+      - run:
+        command: git clone https://github.com/mudithalasantha/experiment-video-chat.git
 
       - run: sudo apt update # PHP CircleCI 2.0 Configuration File# PHP CircleCI 2.0 Configuration File sudo apt install zlib1g-dev libsqlite3-dev
       - run: sudo docker-php-ext-install zip
