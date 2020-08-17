@@ -9,14 +9,23 @@ class CollectionHasBeenCleared
 {
     use SerializesModels;
 
-    public HasMedia $model;
+    /** @var string */
+    public $collectionName;
 
-    public string $collectionName;
+    /** @var HasMedia|null */
+    public $model;
 
-    public function __construct(HasMedia $model, string $collectionName)
+    /**
+     * Create a new instance.
+     *
+     * @param string $collectionName
+     * @param HasMedia|null $model
+     * @return void
+     */
+    public function __construct(string $collectionName, $model = null)
     {
-        $this->model = $model;
-
         $this->collectionName = $collectionName;
+
+        $this->model = $model;
     }
 }

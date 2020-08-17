@@ -76,5 +76,5 @@ interface HasMedia
 
     public function registerMediaCollections(): void;
 
-    public function registerAllMediaConversions(): void;
+    public function registerAllMediaConversions(Media $media = null): void;
 }

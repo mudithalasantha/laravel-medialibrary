@@ -10,45 +10,27 @@ use Spatie\MediaLibrary\Support\RemoteFile;
 class FileAdderFactory
 {
     /**
-     * @param \Illuminate\Database\Eloquent\Model $subject
      * @param string|\Symfony\Component\HttpFoundation\File\UploadedFile $file
+     * @param \Illuminate\Database\Eloquent\Model|null $subject
      *
-     * @return \Spatie\MediaLibrary\MediaCollections\FileAdder
+     * @return \Spatie\MediaLibrary\FileAdder\FileAdder
      */
-    public static function create(Model $subject, $file): FileAdder
+    public static function create($file, $subject = null)
     {
-        /** @var \Spatie\MediaLibrary\MediaCollections\FileAdder $fileAdder */
-        $fileAdder = app(FileAdder::class);
-
-        return $fileAdder
+        return app(FileAdder::class)
             ->setSubject($subject)
             ->setFile($file);
     }
 
-    public static function createFromDisk(Model $subject, string $key, string $disk): FileAdder
+    public static function createFromRequest(string $key, $subject = null): FileAdder
     {
-        /** @var \Spatie\MediaLibrary\MediaCollections\FileAdder $fileAdder */
-        $fileAdder = app(FileAdder::class);
-
-        return $fileAdder
-            ->setSubject($subject)
-            ->setFile(new RemoteFile($key, $disk));
+        return static::createMultipleFromRequest([$key], $subject)->first();
     }
 
-    public static function createFromRequest(Model $subject, string $key): FileAdder
-    {
-        return static::createMultipleFromRequest($subject, [$key])->first();
-    }
-
-    public static function createMultipleFromRequest(Model $subject, array $keys = []): Collection
+    public static function createMultipleFromRequest(array $keys = [], $subject = null): Collection
     {
         return collect($keys)
             ->map(function (string $key) use ($subject) {
-                $search = ['[', ']', '"', "'"];
-                $replace = ['.', '', '', ''];
-
-                $key = str_replace($search, $replace, $key);
-
                 if (! request()->hasFile($key)) {
                     throw RequestDoesNotHaveFile::create($key);
                 }
@@ -56,17 +38,20 @@ class FileAdderFactory
                 $files = request()->file($key);
 
                 if (! is_array($files)) {
-                    return static::create($subject, $files);
+                    return static::create($files, $subject);
                 }
 
-                return array_map(fn ($file) => static::create($subject, $file), $files);
-            })->flatten();
+                return array_map(function ($file) use ($subject) {
+                    return static::create($file, $subject);
+                }, $files);
+            })
+            ->flatten();
     }
 
-    public static function createAllFromRequest(Model $subject): Collection
+    public static function createAllFromRequest($subject = null): Collection
     {
         $fileKeys = array_keys(request()->allFiles());
 
-        return static::createMultipleFromRequest($subject, $fileKeys);
+        return static::createMultipleFromRequest($fileKeys, $subject);
     }
 }

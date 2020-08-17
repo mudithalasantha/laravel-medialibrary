@@ -1,39 +1,61 @@
 <?php
 
-namespace Spatie\MediaLibrary\Conversions;
+namespace Spatie\MediaLibrary\Conversion;
 
-use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Collection;
 use Spatie\Image\Manipulations;
-use Spatie\MediaLibrary\MediaCollections\Exceptions\InvalidConversion;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Illuminate\Support\Collection;
+use Spatie\MediaLibrary\Models\Media;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Spatie\MediaLibrary\Exceptions\InvalidConversion;
 
 class ConversionCollection extends Collection
 {
-    protected Media $media;
+    /** @var \Spatie\MediaLibrary\Models\Media */
+    protected $media;
 
-    public static function createForMedia(Media $media): self
+    /**
+     * @param \Spatie\MediaLibrary\Models\Media $media
+     *
+     * @return static
+     */
+    public static function createForMedia(Media $media)
     {
         return (new static())->setMedia($media);
     }
 
-    public function setMedia(Media $media): self
+    /**
+     * @param \Spatie\MediaLibrary\Models\Media $media
+     *
+     * @return $this
+     */
+    public function setMedia(Media $media)
     {
         $this->media = $media;
 
         $this->items = [];
 
-        $this->addConversionsFromRelatedModel($media);
+        $this->addConversions($media);
 
         $this->addManipulationsFromDb($media);
 
         return $this;
     }
 
+    /**
+     *  Get a conversion by it's name.
+     *
+     * @param string $name
+     *
+     * @return mixed
+     *
+     * @throws \Spatie\MediaLibrary\Exceptions\InvalidConversion
+     */
     public function getByName(string $name): Conversion
     {
-        $conversion = $this->first(fn (Conversion $conversion) => $conversion->getName() === $name);
+        $conversion = $this->first(function (Conversion $conversion) use ($name) {
+            return $conversion->getName() === $name;
+        });
 
         if (! $conversion) {
             throw InvalidConversion::unknownName($name);
@@ -42,11 +64,34 @@ class ConversionCollection extends Collection
         return $conversion;
     }
 
-    protected function addConversionsFromRelatedModel(Media $media): void
+    /**
+     * Add the conversions that are defined on the Media model, or on the related model.
+     *
+     * @param \Spatie\MediaLibrary\Models\Media $media
+     * @return void
+     */
+    protected function addConversions(Media $media)
+    {
+        $media->registerAllMediaConversions();
+
+        $this->items = $media->mediaConversions;
+
+        if ($media->hasModel()) {
+            $this->addConversionsFromRelatedModel($media);
+        }
+    }
+
+    /**
+     * Add the conversion that are defined on the related model of
+     * the given media.
+     *
+     * @param \Spatie\MediaLibrary\Models\Media $media
+     */
+    protected function addConversionsFromRelatedModel(Media $media)
     {
         $modelName = Arr::get(Relation::morphMap(), $media->model_type, $media->model_type);
 
-        /** @var \Spatie\MediaLibrary\HasMedia $model */
+        /** @var \Spatie\MediaLibrary\HasMedia\HasMedia $model */
         $model = new $modelName();
 
         /*
@@ -62,15 +107,18 @@ class ConversionCollection extends Collection
 
         $model->registerAllMediaConversions($media);
 
-        $this->items = $model->mediaConversions;
+        $this->items = array_merge($this->items, $model->mediaConversions);
     }
 
+    /**
+     * Add the extra manipulations that are defined on the given media.
+     *
+     * @param \Spatie\MediaLibrary\Models\Media $media
+     */
     protected function addManipulationsFromDb(Media $media)
     {
-        collect($media->manipulations)->each(function ($manipulation, $conversionName) {
-            $manipulations = new Manipulations([$manipulation]);
-
-            $this->addManipulationToConversion($manipulations, $conversionName);
+        collect($media->manipulations)->each(function ($manipulations, $conversionName) {
+            $this->addManipulationToConversion(new Manipulations([$manipulations]), $conversionName);
         });
     }
 
@@ -80,53 +128,48 @@ class ConversionCollection extends Collection
             return $this;
         }
 
-        return $this->filter(fn (Conversion $conversion) => $conversion->shouldBePerformedOn($collectionName));
+        return $this->filter->shouldBePerformedOn($collectionName);
     }
 
+    /*
+     * Get all the conversions in the collection that should be queued.
+     */
     public function getQueuedConversions(string $collectionName = ''): self
     {
-        return $this
-            ->getConversions($collectionName)
-            ->filter(fn (Conversion $conversion) => $conversion->shouldBeQueued());
+        return $this->getConversions($collectionName)->filter->shouldBeQueued();
     }
 
+    /*
+     * Add the given manipulation to the conversion with the given name.
+     */
     protected function addManipulationToConversion(Manipulations $manipulations, string $conversionName)
     {
-        /** @var \Spatie\MediaLibrary\Conversions\Conversion|null $conversion */
-        $conversion = $this->first(function (Conversion $conversion) use ($conversionName) {
-            if (! in_array($this->media->collection_name, $conversion->getPerformOnCollections())) {
-                return false;
-            }
-
-            if ($conversion->getName() !== $conversionName) {
-                return false;
-            }
-
-            return true;
-        });
-
-        if ($conversion) {
-            $conversion->addAsFirstManipulations($manipulations);
-        }
+        optional($this->first(function (Conversion $conversion) use ($conversionName) {
+            return $conversion->getName() === $conversionName;
+        }))->addAsFirstManipulations($manipulations);
 
         if ($conversionName === '*') {
-            $this->each(
-                fn (Conversion $conversion) => $conversion->addAsFirstManipulations(clone $manipulations)
-            );
+            $this->each->addAsFirstManipulations(clone $manipulations);
         }
     }
 
+    /*
+     * Get all the conversions in the collection that should not be queued.
+     */
     public function getNonQueuedConversions(string $collectionName = ''): self
     {
-        return $this
-            ->getConversions($collectionName)
-            ->reject(fn (Conversion $conversion) => $conversion->shouldBeQueued());
+        return $this->getConversions($collectionName)->reject->shouldBeQueued();
     }
 
+    /*
+     * Return the list of conversion files.
+     */
     public function getConversionsFiles(string $collectionName = ''): self
     {
-        return $this
-            ->getConversions($collectionName)
-            ->map(fn (Conversion $conversion) => $conversion->getConversionFile($this->media));
+        $fileName = pathinfo($this->media->file_name, PATHINFO_FILENAME);
+
+        return $this->getConversions($collectionName)->map(function (Conversion $conversion) use ($fileName) {
+            return $conversion->getConversionFile($fileName);
+        });
     }
 }
