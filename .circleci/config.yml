@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - run: 
-          command: echo pwd
+          command: pwd
       - add_ssh_keys:
           fingerprints:
             - "ae:7e:ec:6f:8a:58:eb:8b:42:49:53:1b:45:1e:34:00"
