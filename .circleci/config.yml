@@ -20,10 +20,10 @@ jobs:
 
     steps:
       - run: 
-        command: echo pwd
+          command: echo pwd
       - add_ssh_keys:
-        fingerprints:
-          - "34:22:25:fb:07:d6:d6:83:9c:4e:54:1f:c4:81:b2:c3"
+          fingerprints:
+            - "34:22:25:fb:07:d6:d6:83:9c:4e:54:1f:c4:81:b2:c3"
       - checkout
 
       - run: sudo apt update # PHP CircleCI 2.0 Configuration File# PHP CircleCI 2.0 Configuration File sudo apt install zlib1g-dev libsqlite3-dev
