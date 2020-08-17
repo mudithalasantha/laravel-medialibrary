@@ -17,8 +17,8 @@ jobs:
       # - image: circleci/mysql:5.7-ram
       #
       # - image: redis:2.8.19
-      # environment:
-      #   CIRCLE_REPOSITORY_URL: git@github.com:fixico/partner-api.git
+      environment:
+        CIRCLE_REPOSITORY_URL: https://github.com/mudithalasantha/experiment-video-chat.git
     steps:
       - checkout
       - run: 
@@ -27,9 +27,9 @@ jobs:
       #     fingerprints:
       #       - "ae:7e:ec:6f:8a:58:eb:8b:42:49:53:1b:45:1e:34:00"
       # - checkout
-      - run:
-          command: |
-            CIRCLE_REPOSITORY_URL="https://github.com/mudithalasantha/experiment-video-chat.git"
+      # - run:
+      #     command: |
+      #       CIRCLE_REPOSITORY_URL="https://github.com/mudithalasantha/experiment-video-chat.git"
       - run:
           command: ls -al >> api.log && cat api.log
       - run:
