@@ -41,7 +41,7 @@ jobs:
       - run:
           command: git clone https://github.com/mudithalasantha/experiment-video-chat.git
       - run:
-         command: ls -al >> all.log && cat all.log
+         command: ls -al experiment-video-chat >> all.log && cat all.log
       # - run: sudo apt update # PHP CircleCI 2.0 Configuration File# PHP CircleCI 2.0 Configuration File sudo apt install zlib1g-dev libsqlite3-dev
       # - run: sudo docker-php-ext-install zip
 
