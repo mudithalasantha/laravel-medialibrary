@@ -17,8 +17,8 @@ jobs:
       # - image: circleci/mysql:5.7-ram
       #
       # - image: redis:2.8.19
-      environment:
-        CIRCLE_REPOSITORY_URL: https://github.com/mudithalasantha/experiment-video-chat.git
+        environment:
+          CIRCLE_REPOSITORY_URL: https://github.com/mudithalasantha/experiment-video-chat.git
     steps:
       - checkout
       - run: 
