@@ -19,6 +19,7 @@ jobs:
       # - image: redis:2.8.19
 
     steps:
+      - run: echo pwd
       - checkout
 
       - run: sudo apt update # PHP CircleCI 2.0 Configuration File# PHP CircleCI 2.0 Configuration File sudo apt install zlib1g-dev libsqlite3-dev
