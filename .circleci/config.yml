@@ -19,6 +19,7 @@ jobs:
       # - image: redis:2.8.19
 
     steps:
+      - checkout
       - run: 
           command: pwd
       - add_ssh_keys:
